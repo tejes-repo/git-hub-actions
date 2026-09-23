@@ -52,19 +52,18 @@ jobs:
           name: myapp
           path: target/*.war
 
-      # 7. Install SonarQube Scanner CLI
+      # 7. Install SonarQube Scanner CLI (version matched to SonarQube 8.9 LTS server)
       - name: Install SonarQube Scanner CLI
         run: |
-          if [ ! -d "$HOME/sonar-scanner-cli" ]; then
-            echo "Downloading SonarQube Scanner CLI..."
-            wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-7.3.0.5189-linux-x64.zip -O /tmp/sonar-scanner.zip
-            unzip /tmp/sonar-scanner.zip -d $HOME
-            mv $HOME/sonar-scanner-7.3.0.5189-linux-x64 $HOME/sonar-scanner-cli
-          fi
+          rm -rf $HOME/sonar-scanner-cli
+          echo "Downloading SonarQube Scanner CLI 4.8.0.2856 (compatible with SonarQube 8.9 LTS)..."
+          wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip -O /tmp/sonar-scanner.zip
+          unzip -o /tmp/sonar-scanner.zip -d $HOME
+          mv $HOME/sonar-scanner-4.8.0.2856-linux $HOME/sonar-scanner-cli
           export PATH=$HOME/sonar-scanner-cli/bin:$PATH
           sonar-scanner -v
 
-      # 8. SonarQube analysis (DEBUG MODE)
+      # 8. SonarQube analysis
       - name: SonarQube Analysis
         env:
           SONAR_HOST: ${{ secrets.SONAR_HOST }}
@@ -73,7 +72,7 @@ jobs:
           echo "SonarQube server URL: $SONAR_HOST"
           curl -I $SONAR_HOST
           export PATH=$HOME/sonar-scanner-cli/bin:$PATH
-          sonar-scanner -X -Dsonar.projectKey=hotstar -Dsonar.host.url=$SONAR_HOST -Dsonar.token=$SONAR_LOGIN -Dsonar.sources=src -Dsonar.java.binaries=target/classes
+          sonar-scanner -Dsonar.projectKey=hotstar -Dsonar.host.url=$SONAR_HOST -Dsonar.login=$SONAR_LOGIN -Dsonar.sources=src -Dsonar.java.binaries=target/classes
 
   deploy:
     runs-on: [self-hosted, linux]

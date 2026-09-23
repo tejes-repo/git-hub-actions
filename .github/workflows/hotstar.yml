@@ -64,7 +64,7 @@ jobs:
           export PATH=$HOME/sonar-scanner-cli/bin:$PATH
           sonar-scanner -v
 
-      # 8. SonarQube analysis
+      # 8. SonarQube analysis (DEBUG MODE)
       - name: SonarQube Analysis
         env:
           SONAR_HOST: ${{ secrets.SONAR_HOST }}
@@ -72,13 +72,8 @@ jobs:
         run: |
           echo "SonarQube server URL: $SONAR_HOST"
           curl -I $SONAR_HOST
-          export PATH=$HOME/sonar-scanner-cli/bin:$PATH               
-          sonar-scanner                                         
-            -Dsonar.projectKey=hotstar 
-            -Dsonar.host.url=$SONAR_HOST 
-            -Dsonar.token=$SONAR_LOGIN 
-            -Dsonar.sources=src                                       
-            -Dsonar.java.binaries=target/classes                       
+          export PATH=$HOME/sonar-scanner-cli/bin:$PATH
+          sonar-scanner -X -Dsonar.projectKey=hotstar -Dsonar.host.url=$SONAR_HOST -Dsonar.token=$SONAR_LOGIN -Dsonar.sources=src -Dsonar.java.binaries=target/classes
 
   deploy:
     runs-on: [self-hosted, linux]

@@ -72,13 +72,13 @@ jobs:
         run: |
           echo "SonarQube server URL: $SONAR_HOST"
           curl -I $SONAR_HOST
-          export PATH=$HOME/sonar-scanner-cli/bin:$PATH               # <<< CHANGED: re-export PATH, new shell each step
-          sonar-scanner \                                              # <<< CHANGED: use CLI scanner instead of mvn sonar:sonar
+          export PATH=$HOME/sonar-scanner-cli/bin:$PATH               
+          sonar-scanner \                                              
             -Dsonar.projectKey=hotstar \
             -Dsonar.host.url=$SONAR_HOST \
             -Dsonar.login=$SONAR_LOGIN \
-            -Dsonar.sources=src \                                      # <<< CHANGED: CLI needs sources path explicitly
-            -Dsonar.java.binaries=target/classes                       # <<< CHANGED: CLI needs compiled classes path explicitly
+            -Dsonar.sources=src \                                      
+            -Dsonar.java.binaries=target/classes                       
 
   deploy:
     runs-on: [self-hosted, linux]

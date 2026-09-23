@@ -76,7 +76,7 @@ jobs:
           sonar-scanner                                         
             -Dsonar.projectKey=hotstar 
             -Dsonar.host.url=$SONAR_HOST 
-            -Dsonar.login=$SONAR_LOGIN 
+            -Dsonar.token=$SONAR_LOGIN 
             -Dsonar.sources=src                                       
             -Dsonar.java.binaries=target/classes                       
 

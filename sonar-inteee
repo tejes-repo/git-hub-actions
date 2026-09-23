@@ -1,0 +1,95 @@
+name: Java CI/CD Pipeline to Tomcat
+
+on:
+  push:
+    branches: [ main ]   # Trigger on push to main branch
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux]
+
+    steps:
+      # 1. Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Set up JDK
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      # 3. Install Maven if missing
+      - name: Ensure Maven is installed
+        run: |
+          if ! command -v mvn &> /dev/null; then
+            echo "Maven not found. Installing..."
+            sudo dnf install -y maven
+          else
+            echo "Maven is already installed"
+          fi
+          mvn -version
+
+      # 4. Cache Maven dependencies
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      # 5. Build with Maven
+      - name: Build with Maven
+        run: mvn clean package -DskipTests
+
+      # 6. Upload WAR as artifact (optional, for later jobs)
+      - name: Upload WAR artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: myapp
+          path: target/*.war
+
+      # 7. Install SonarQube Scanner CLI (version matched to SonarQube 8.9 LTS server)
+      - name: Install SonarQube Scanner CLI
+        run: |
+          rm -rf $HOME/sonar-scanner-cli
+          echo "Downloading SonarQube Scanner CLI 4.8.0.2856 (compatible with SonarQube 8.9 LTS)..."
+          wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip -O /tmp/sonar-scanner.zip
+          unzip -o /tmp/sonar-scanner.zip -d $HOME
+          mv $HOME/sonar-scanner-4.8.0.2856-linux $HOME/sonar-scanner-cli
+          export PATH=$HOME/sonar-scanner-cli/bin:$PATH
+          sonar-scanner -v
+
+      # 8. SonarQube analysis
+      - name: SonarQube Analysis
+        env:
+          SONAR_HOST: ${{ secrets.SONAR_HOST }}
+          SONAR_LOGIN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          echo "SonarQube server URL: $SONAR_HOST"
+          curl -I $SONAR_HOST
+          export PATH=$HOME/sonar-scanner-cli/bin:$PATH
+          sonar-scanner -Dsonar.projectKey=hotstar -Dsonar.host.url=$SONAR_HOST -Dsonar.login=$SONAR_LOGIN -Dsonar.sources=src -Dsonar.java.binaries=target/classes
+
+  deploy:
+    runs-on: [self-hosted, linux]
+    needs: build
+    environment: production
+
+    steps:
+      # 9. Download WAR artifact
+      - name: Download WAR artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: myapp
+
+      # 10. Deploy WAR via Tomcat Manager
+      - name: Deploy to Tomcat
+        run: |
+          WAR_FILE=$(ls *.war)
+          echo "Deploying $WAR_FILE to Tomcat..."
+          curl -v --upload-file "$WAR_FILE" \
+            "http://${{ secrets.TOMCAT_USER }}:${{ secrets.TOMCAT_PASSWORD }}@${{ secrets.TOMCAT_HOST }}/manager/text/deploy?path=/myapp&update=true"

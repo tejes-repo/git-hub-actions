@@ -73,11 +73,11 @@ jobs:
           echo "SonarQube server URL: $SONAR_HOST"
           curl -I $SONAR_HOST
           export PATH=$HOME/sonar-scanner-cli/bin:$PATH               
-          sonar-scanner \                                              
-            -Dsonar.projectKey=hotstar \
-            -Dsonar.host.url=$SONAR_HOST \
-            -Dsonar.login=$SONAR_LOGIN \
-            -Dsonar.sources=src \                                      
+          sonar-scanner                                         
+            -Dsonar.projectKey=hotstar 
+            -Dsonar.host.url=$SONAR_HOST 
+            -Dsonar.login=$SONAR_LOGIN 
+            -Dsonar.sources=src                                       
             -Dsonar.java.binaries=target/classes                       
 
   deploy:
